@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenAI, ThinkingLevel } from '@google/genai'
 
 const MAX_MESSAGES = 8
 const MAX_MESSAGE_LENGTH = 500
@@ -41,6 +41,34 @@ export function sanitizeMessages(messages) {
     }))
 }
 
+async function generateWithRetry(ai, request) {
+  const attempts = [
+    { delay: 0, model: request.model, thinkingLevel: ThinkingLevel.LOW },
+    { delay: 500, model: 'gemini-3.5-flash-lite', thinkingLevel: ThinkingLevel.MINIMAL },
+    { delay: 1_200, model: 'gemini-3.5-flash-lite', thinkingLevel: ThinkingLevel.MINIMAL },
+  ]
+  let lastError
+
+  for (const { delay, model, thinkingLevel } of attempts) {
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay))
+    try {
+      return await ai.models.generateContent({
+        ...request,
+        model,
+        config: {
+          ...request.config,
+          thinkingConfig: { thinkingLevel },
+        },
+      })
+    } catch (error) {
+      lastError = error
+      if (error?.status !== 429 && error?.status !== 503) throw error
+    }
+  }
+
+  throw lastError
+}
+
 export function createChatHandler(createClient = (apiKey) => new GoogleGenAI({ apiKey })) {
   return async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -62,13 +90,16 @@ export function createChatHandler(createClient = (apiKey) => new GoogleGenAI({ a
 
     try {
       const ai = createClient(apiKey)
-      const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+      const result = await generateWithRetry(ai, {
+        model: 'gemini-3.8-flash',
         contents: messages,
         config: {
           systemInstruction: SYSTEM_INSTRUCTION,
           maxOutputTokens: 350,
           temperature: 0.2,
+          thinkingConfig: {
+            thinkingLevel: ThinkingLevel.LOW,
+          },
         },
       })
 

@@ -1,0 +1,4 @@
+{
+  "devCommand": "node scripts/dev.mjs",
+  "buildCommand": "npm run build"
+}

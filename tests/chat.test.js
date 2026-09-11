@@ -37,7 +37,8 @@ function expectedReply(question) {
 function fakeClient() {
   return {
     models: {
-      async generateContent({ contents, config }) {
+      async generateContent({ model, contents, config }) {
+        assert.equal(model, 'gemini-3.8-flash')
         assert.equal(config.systemInstruction, SYSTEM_INSTRUCTION)
         assert.equal(config.maxOutputTokens, 350)
         const question = contents.at(-1).parts[0].text
