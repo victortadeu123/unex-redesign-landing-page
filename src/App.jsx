@@ -3,6 +3,7 @@ import {
   Menu, X, GraduationCap, MapPin, ChevronRight, CheckCircle, 
   Send, Phone, Mail, Award, BookOpen, Users, Star, ArrowUpRight
 } from 'lucide-react';
+import Chatbot from './components/Chatbot';
 
 export default function UnexLandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -443,6 +444,8 @@ export default function UnexLandingPage() {
           © {new Date().getFullYear()} Unex. Todos os direitos reservados.
         </div>
       </footer>
+
+      <Chatbot />
 
     </div>
   );
